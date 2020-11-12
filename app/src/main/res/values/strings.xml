@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">Petroshow</string>
+    <string name="botao">Botao</string>
+    <string name="nome">Nome</string>
+    <string name="email">Email</string>
+    <string name="telefone">Telefone</string>
+    <string name="salvar">Salvar</string>
+    <string name="data_de_nascimento">Data de Nascimento</string>
+    <string name="image_cliente">image cliente</string>
+    <string name="cep">CEP</string>
+    <string name="uf">UF</string>
+    <string name="numero">Número</string>
+    <string name="cidade">Cidade</string>
+    <string name="bairro">Bairro</string>
+    <string name="complemento">Complemento</string>
+    <string name="adapterClienteEmail">adapterClienteEmail</string>
+    <string name="adapterClienteNome">adapterClienteNome</string>
+    <string name="fabAddCliente">fabAddCliente</string>
+    <string name="adapterEnderecoNome">adapterEnderecoNome</string>
+    <string name="pesquisar_por_cep">Pesquisar por CEP</string>
+</resources>
