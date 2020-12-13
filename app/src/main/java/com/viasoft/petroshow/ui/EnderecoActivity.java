@@ -139,10 +139,10 @@ public class EnderecoActivity extends AppCompatActivity {
         if (enderecoParaEditar.getId() == null) {
             enderecoParaEditar = setarEndereco(enderecoParaEditar);
             enderecoDAO.insert(enderecoParaEditar);
-        } else {
-            enderecoParaEditar = setarEndereco(enderecoParaEditar);
-            enderecoDAO.update(setarEndereco(enderecoParaEditar));
+            return;
         }
+        enderecoParaEditar = setarEndereco(enderecoParaEditar);
+        enderecoDAO.update(setarEndereco(enderecoParaEditar));
     }
 
     private Endereco setarEndereco(Endereco endereco) {

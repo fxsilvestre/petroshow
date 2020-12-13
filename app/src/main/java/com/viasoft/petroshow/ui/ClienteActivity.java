@@ -201,6 +201,7 @@ public class ClienteActivity extends AppCompatActivity {
             cliente = new Cliente();
             setCliente();
             clienteDAO.insert(cliente);
+            return;
         }
         setCliente();
         clienteDAO.update(cliente);
