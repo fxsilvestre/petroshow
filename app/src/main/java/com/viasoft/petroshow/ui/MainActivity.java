@@ -18,26 +18,33 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.viasoft.petroshow.R;
 import com.viasoft.petroshow.data.local.cliente.Cliente;
 import com.viasoft.petroshow.data.local.cliente.ClienteDAO;
+import com.viasoft.petroshow.data.local.endereco.Endereco;
 import com.viasoft.petroshow.ui.adapter.ClienteAdapter;
 import com.viasoft.petroshow.ui.util.Constants;
+import com.viasoft.petroshow.ui.util.MensagemToastShort;
 import com.viasoft.petroshow.ui.util.RecyclerItemClickListener;
 
-import java.util.ArrayList;
 import java.util.List;
 
+import javax.inject.Inject;
+
+import dagger.hilt.android.AndroidEntryPoint;
+
+@AndroidEntryPoint
 public class MainActivity extends AppCompatActivity {
     private static final String ADICIONAR_ENDERECO = "Adicionar endereço";
     private static final String APAGAR_O_CLIENTE = "Apagar o cliente?";
     private static final String CLIENTE_APAGADO_COM_SUCESSO = "Cliente apagado com sucesso.";
+    public static final String NENHUM_CLIENTE_CADASTRADO = "Nenhum cliente cadastrado!";
     private RecyclerView recyclerViewCliente;
     private List<Cliente> clientes;
-    private ClienteDAO clienteDAO;
+
+    @Inject
+    ClienteDAO clienteDAO;
 
     @Override
     protected void onStart() {
         super.onStart();
-        this.clienteDAO = new ClienteDAO(getApplicationContext());
-        this.clientes = new ArrayList<>();
         carregarClientes();
     }
 
@@ -78,20 +85,20 @@ public class MainActivity extends AppCompatActivity {
         );
     }
 
-    @Override
-    protected void onDestroy() {
-        this.clienteDAO = null;
-        super.onDestroy();
-    }
-
     private void carregarClientes() {
         this.clientes = this.clienteDAO.getAll();
+        if (clientes.isEmpty()) {
+            MensagemToastShort.mostrarMsg(getApplicationContext(), NENHUM_CLIENTE_CADASTRADO);
+            return;
+        }
         ClienteAdapter adapter = new ClienteAdapter(this.clientes);
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(getApplicationContext());
         recyclerViewCliente.setLayoutManager(layoutManager);
         recyclerViewCliente.setHasFixedSize(true);
         recyclerViewCliente.addItemDecoration(new DividerItemDecoration(this, LinearLayout.VERTICAL));
         recyclerViewCliente.setAdapter(adapter);
+        adapter = null;
+        layoutManager = null;
     }
 
     public void mostrarDialogOpcoes(View view, Cliente cliente) {
@@ -112,7 +119,7 @@ public class MainActivity extends AppCompatActivity {
                         break;
                     case 2:
                         Intent intentAdicionarEndereco = new Intent(getApplicationContext(), EnderecoActivity.class);
-                        intentAdicionarEndereco.putExtra(Constants.ID_CLIENTE, cliente.getId());
+                        intentAdicionarEndereco.putExtra(Constants.ENDERECO_PARA_EDITAR, new Endereco(cliente.getId()));
                         startActivity(intentAdicionarEndereco);
                         break;
                 }
@@ -141,18 +148,10 @@ public class MainActivity extends AppCompatActivity {
 
     private void apagarCliente(Cliente cliente) {
         if (this.clienteDAO.delete(cliente)) {
-            Toast.makeText(
-                    getApplicationContext(),
-                    CLIENTE_APAGADO_COM_SUCESSO,
-                    Toast.LENGTH_SHORT
-            ).show();
+            MensagemToastShort.mostrarMsg(getApplicationContext(), CLIENTE_APAGADO_COM_SUCESSO);
             onStart();
         } else {
-            Toast.makeText(
-                    getApplicationContext(),
-                    Constants.ERRO,
-                    Toast.LENGTH_SHORT
-            ).show();
+            MensagemToastShort.mostrarMsg(getApplicationContext(), Constants.ERRO);
         }
     }
 }

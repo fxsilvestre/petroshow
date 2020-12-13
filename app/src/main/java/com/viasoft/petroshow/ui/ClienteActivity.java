@@ -24,8 +24,10 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.viasoft.petroshow.R;
 import com.viasoft.petroshow.data.local.cliente.Cliente;
 import com.viasoft.petroshow.data.local.cliente.ClienteDAO;
+import com.viasoft.petroshow.data.local.cliente.ClienteIDAO;
 import com.viasoft.petroshow.data.local.endereco.Endereco;
 import com.viasoft.petroshow.data.local.endereco.EnderecoDAO;
+import com.viasoft.petroshow.data.local.endereco.EnderecoIDAO;
 import com.viasoft.petroshow.ui.adapter.EnderecoAdapter;
 import com.viasoft.petroshow.ui.util.Constants;
 import com.viasoft.petroshow.ui.util.RecyclerItemClickListener;
@@ -33,6 +35,11 @@ import com.viasoft.petroshow.ui.util.RecyclerItemClickListener;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.inject.Inject;
+
+import dagger.hilt.android.AndroidEntryPoint;
+
+@AndroidEntryPoint
 public class ClienteActivity extends AppCompatActivity {
     private static final String ENDEREÇO_APAGADO_COM_SUCESSO = "Endereço apagado com sucesso.";
     private static final String APAGAR_O_ENDEREÇO = "Apagar o endereço?";
@@ -44,24 +51,24 @@ public class ClienteActivity extends AppCompatActivity {
     private TextInputEditText telefone;
     private TextInputEditText dataNascimento;
     private Button buttonSalvarCliente;
-    private ClienteDAO clienteDAO;
-    private EnderecoDAO enderecoDAO;
     private RecyclerView recyclerViewEndereco;
     private List<Endereco> enderecos;
     private ImageButton imagemCliente;
     private Bitmap imagemClienteBitmap;
+    private Cliente cliente;
+    @Inject
+    ClienteDAO clienteDAO;
+    @Inject
+    EnderecoDAO enderecoDAO;
 
     @Override
     protected void onStart() {
         super.onStart();
-        this.clienteDAO = new ClienteDAO(getApplicationContext());
-        this.enderecoDAO = new EnderecoDAO(getApplicationContext());
-        this.enderecos = new ArrayList<>();
         Bundle dados = getIntent().getExtras();
         if (dados != null) {
-            Cliente c = (Cliente) dados.getSerializable(Constants.CLIENTE);
-            preencherCliente(c);
-            carregarEnderecos(c.getId());
+            cliente = (Cliente) dados.getSerializable(Constants.CLIENTE);
+            preencherCliente(cliente);
+            carregarEnderecos(cliente.getId());
         }
     }
 
@@ -70,7 +77,6 @@ public class ClienteActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_cliente);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-
         nome = findViewById(R.id.nome);
         email = findViewById(R.id.email);
         telefone = findViewById(R.id.telefone);
@@ -136,13 +142,6 @@ public class ClienteActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    protected void onDestroy() {
-        this.clienteDAO = null;
-        this.enderecoDAO = null;
-        super.onDestroy();
-    }
-
     public void mostrarDialogOpcoes(View view) {
         String[] options = {Constants.CAMERA, Constants.GALERIA};
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -170,13 +169,15 @@ public class ClienteActivity extends AppCompatActivity {
     }
 
     private void carregarEnderecos(Long idCliente) {
-        this.enderecos = this.enderecoDAO.getAllByCliente(idCliente);
-        EnderecoAdapter adapter = new EnderecoAdapter(this.enderecos);
+        enderecos = enderecoDAO.getAllByCliente(idCliente);
+        EnderecoAdapter adapter = new EnderecoAdapter(enderecos);
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(getApplicationContext());
         recyclerViewEndereco.setLayoutManager(layoutManager);
         recyclerViewEndereco.setHasFixedSize(true);
         recyclerViewEndereco.addItemDecoration(new DividerItemDecoration(this, LinearLayout.VERTICAL));
         recyclerViewEndereco.setAdapter(adapter);
+        adapter = null;
+        layoutManager = null;
     }
 
     private void mostrarMsg(String msg) {
@@ -196,18 +197,26 @@ public class ClienteActivity extends AppCompatActivity {
             mostrarMsg(NOME_E_EMAIL_SÃO_OBRIGATÓRIOS);
             return;
         }
-        Cliente c = new Cliente();
-        c.setNome(nome.getText().toString());
-        c.setEmail(email.getText().toString());
-        c.setTelefone(telefone.getText().toString());
-        c.setDataNascimento(dataNascimento.getText().toString());
+        if (cliente == null) {
+            cliente = new Cliente();
+            setCliente();
+            clienteDAO.insert(cliente);
+        }
+        setCliente();
+        clienteDAO.update(cliente);
+    }
+
+    private void setCliente() {
+        cliente.setNome(nome.getText().toString());
+        cliente.setEmail(email.getText().toString());
+        cliente.setTelefone(telefone.getText().toString());
+        cliente.setDataNascimento(dataNascimento.getText().toString());
         /*
         if (imagemClienteBitmap != null) {
             ByteArrayOutputStream saida = new ByteArrayOutputStream();
             imagemClienteBitmap.compress(Bitmap.CompressFormat.PNG,100,saida);
             c.setFoto(saida.toByteArray());
         }*/
-        this.clienteDAO.insert(c);
     }
 
     private void preencherCliente(Cliente c) {
@@ -231,7 +240,7 @@ public class ClienteActivity extends AppCompatActivity {
                 switch (i) {
                     case 0:
                         Intent intentEditar = new Intent(getApplicationContext(), EnderecoActivity.class);
-                        intentEditar.putExtra(Constants.ID_CLIENTE, 0);
+                        //intentEditar.putExtra(Constants.ID_CLIENTE, 0);
                         intentEditar.putExtra(Constants.ENDERECO_PARA_EDITAR, endereco);
                         startActivity(intentEditar);
                         break;
@@ -263,7 +272,7 @@ public class ClienteActivity extends AppCompatActivity {
     }
 
     private void apagarEndereco(Endereco endereco) {
-        if (this.enderecoDAO.delete(endereco)) {
+        if (enderecoDAO.delete(endereco)) {
             Toast.makeText(
                     getApplicationContext(),
                     ENDEREÇO_APAGADO_COM_SUCESSO,

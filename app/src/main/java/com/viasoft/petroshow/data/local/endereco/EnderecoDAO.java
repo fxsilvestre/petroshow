@@ -8,12 +8,17 @@ import android.util.Log;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.inject.Inject;
+
+import dagger.hilt.android.qualifiers.ActivityContext;
+
 public class EnderecoDAO implements EnderecoIDAO {
 
     private SQLiteDatabase write;
     private SQLiteDatabase read;
 
-    public EnderecoDAO(Context context) {
+    @Inject
+    EnderecoDAO(@ActivityContext Context context) {
         EnderecoDB db = new EnderecoDB(context);
         write = db.getWritableDatabase();
         read = db.getReadableDatabase();

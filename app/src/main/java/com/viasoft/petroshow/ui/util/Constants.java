@@ -13,6 +13,6 @@ public class Constants {
     public static final String ERRO = "ERRO!";
 
     //Bundle
-    public static final String ID_CLIENTE = "idCliente";
+    //public static final String ID_CLIENTE = "idCliente";
     public static final String ENDERECO_PARA_EDITAR = "enderecoParaEditar";
 }

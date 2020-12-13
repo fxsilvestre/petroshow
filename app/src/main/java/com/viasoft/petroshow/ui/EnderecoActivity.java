@@ -12,17 +12,21 @@ import com.viasoft.petroshow.R;
 import com.viasoft.petroshow.data.local.endereco.Endereco;
 import com.viasoft.petroshow.data.local.endereco.EnderecoDAO;
 import com.viasoft.petroshow.data.remoto.endereco.EnderecoResp;
+import com.viasoft.petroshow.data.remoto.endereco.EnderecoRetrofit;
 import com.viasoft.petroshow.data.remoto.endereco.EnderecoService;
 import com.viasoft.petroshow.ui.util.Constants;
 
+import javax.inject.Inject;
+
+import dagger.hilt.android.AndroidEntryPoint;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
 
+@AndroidEntryPoint
 public class EnderecoActivity extends AppCompatActivity {
     private static final String O_CEP_TEM_QUE_TER_8_DÍGITOS = "O CEP tem que ter 8 dígitos!";
+    public static final String NOME_E_EMAIL_SAO_OBRIGATORIOS = "Nome e Email são obrigatórios!";
     private TextInputEditText cep;
     private TextInputEditText nome;
     private TextInputEditText numero;
@@ -32,27 +36,17 @@ public class EnderecoActivity extends AppCompatActivity {
     private TextInputEditText uf;
     private Button buttonSalvarEndereco;
     private Button buttonPesquisaCep;
-    private EnderecoDAO enderecoDAO;
-    private Long idCliente;
     private Endereco enderecoParaEditar;
-    private Retrofit retrofit;
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        this.enderecoDAO = new EnderecoDAO(getApplicationContext());
-    }
+    @Inject
+    EnderecoRetrofit enderecoRetrofit;
+    @Inject
+    EnderecoDAO enderecoDAO;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_endereco);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-
-        retrofit = new Retrofit.Builder()
-                .baseUrl("https://viacep.com.br/ws/")
-                .addConverterFactory(GsonConverterFactory.create())
-                .build();
 
         cep = findViewById(R.id.cep);
         nome = findViewById(R.id.nome);
@@ -78,18 +72,13 @@ public class EnderecoActivity extends AppCompatActivity {
         });
         Bundle dados = getIntent().getExtras();
         if (dados != null) {
-            this.idCliente = (Long) dados.getLong(Constants.ID_CLIENTE);
-            this.enderecoParaEditar = (Endereco) dados.getSerializable(Constants.ENDERECO_PARA_EDITAR);
+            enderecoParaEditar = (Endereco) dados.getSerializable(Constants.ENDERECO_PARA_EDITAR);
             if (enderecoParaEditar != null) {
-                preencherViewEndereco(enderecoParaEditar);
+                if (enderecoParaEditar.getId() != null) {
+                    setarTelaEndereco(enderecoParaEditar);
+                }
             }
         }
-    }
-
-    @Override
-    protected void onDestroy() {
-        this.enderecoDAO = null;
-        super.onDestroy();
     }
 
     private void pesquisarPorCEP(String cpf) {
@@ -98,7 +87,7 @@ public class EnderecoActivity extends AppCompatActivity {
             return;
         }
 
-        EnderecoService service = this.retrofit.create(EnderecoService.class);
+        EnderecoService service = enderecoRetrofit.getEndereco().create(EnderecoService.class);
         Call<EnderecoResp> call = service.pesquisarPorCEP(cpf);
         call.enqueue(new Callback<EnderecoResp>() {
             @Override
@@ -144,22 +133,19 @@ public class EnderecoActivity extends AppCompatActivity {
 
     private void salvarEndereco() {
         if (!validarDados()) {
-            mostrarMsg("Nome e Email são obrigatórios!");
+            mostrarMsg(NOME_E_EMAIL_SAO_OBRIGATORIOS);
             return;
         }
-        Endereco endereco;
-        if (idCliente != 0) {
-            endereco = new Endereco();
-            endereco = setEndereco(endereco);
-            endereco.setIdCliente(idCliente);
-            this.enderecoDAO.insert(endereco);
+        if (enderecoParaEditar.getId() == null) {
+            enderecoParaEditar = setarEndereco(enderecoParaEditar);
+            enderecoDAO.insert(enderecoParaEditar);
         } else {
-            endereco = this.enderecoParaEditar;
-            this.enderecoDAO.update(setEndereco(endereco));
+            enderecoParaEditar = setarEndereco(enderecoParaEditar);
+            enderecoDAO.update(setarEndereco(enderecoParaEditar));
         }
     }
 
-    private Endereco setEndereco(Endereco endereco) {
+    private Endereco setarEndereco(Endereco endereco) {
         endereco.setCep(cep.getText().toString());
         endereco.setNome(nome.getText().toString());
         endereco.setNumero(numero.getText().toString());
@@ -170,7 +156,7 @@ public class EnderecoActivity extends AppCompatActivity {
         return endereco;
     }
 
-    private void preencherViewEndereco(Endereco e) {
+    private void setarTelaEndereco(Endereco e) {
         cep.setText(e.getCep());
         nome.setText(e.getNome());
         numero.setText(e.getNumero());

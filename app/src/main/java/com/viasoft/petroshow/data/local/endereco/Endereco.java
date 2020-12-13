@@ -13,6 +13,13 @@ public class Endereco implements Serializable {
     private String uf;
     private Long idCliente;
 
+    public Endereco() {
+    }
+
+    public Endereco(Long idCliente) {
+        this.idCliente = idCliente;
+    }
+
     public Long getIdCliente() {
         return idCliente;
     }

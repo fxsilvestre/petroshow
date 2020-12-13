@@ -9,12 +9,17 @@ import android.util.Log;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.inject.Inject;
+
+import dagger.hilt.android.qualifiers.ActivityContext;
+
 public class ClienteDAO implements ClienteIDAO {
 
     private SQLiteDatabase write;
     private SQLiteDatabase read;
 
-    public ClienteDAO(Context context) {
+    @Inject
+    ClienteDAO(@ActivityContext Context context) {
         ClienteDB db = new ClienteDB(context);
         write = db.getWritableDatabase();
         read = db.getReadableDatabase();
